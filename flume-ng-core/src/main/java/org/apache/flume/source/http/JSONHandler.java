@@ -87,7 +87,9 @@ public class JSONHandler implements HTTPSourceHandler {
    */
   @Override
   public List<Event> getEvents(HttpServletRequest request) throws Exception {
-    BufferedReader reader = request.getReader();
+    BufferedReader reader = request.getReader();// 使用IO流来读取HTTP Request中的请求体内容
+    // 这里是假定，http请求中，带着一个大的JSON串，这个JSON串，就是发送过来的多条数据
+    // [{},{},{}]  这种格式，一个{}是一个数据
     String charset = request.getCharacterEncoding();
     //UTF-8 is default for JSON. If no charset is specified, UTF-8 is to
     //be assumed.
@@ -110,7 +112,12 @@ public class JSONHandler implements HTTPSourceHandler {
      */
     List<Event> eventList = new ArrayList<Event>(0);
     try {
+      // 这里的listType，是指定的转换类型，是GSON要求的Type类型
+      // 格式: [{"headers": {"xxx":"yyy"}, "body": "xxx"},{},{}]
+      // 每条数据，都有headers和body，就对应转换成JSONEvent
+      //
       eventList = gson.fromJson(reader, listType);
+
     } catch (JsonSyntaxException ex) {
       throw new HTTPBadRequestException("Request has invalid JSON Syntax.", ex);
     }
@@ -118,6 +125,8 @@ public class JSONHandler implements HTTPSourceHandler {
     for (Event e : eventList) {
       ((JSONEvent) e).setCharset(charset);
     }
+    // 这个是把JSONEvent，转换为标准的Flume Event，也就是body是个byte[]
+    // 因为这里是两个实现类，需要统一处理
     return getSimpleEvents(eventList);
   }
 

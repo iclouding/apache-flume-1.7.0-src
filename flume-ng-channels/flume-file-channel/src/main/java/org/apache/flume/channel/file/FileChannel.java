@@ -356,6 +356,12 @@ public class FileChannel extends BasicChannelSemantics {
           "Thread has transaction which is still open: " +
               trans.getStateAsString() + channelNameDescriptor);
     }
+    /**
+     * transactionCapacity：一次事务最多写入的数量，默认是1W条
+     * keepAlive：最多等待事务的执行时间
+     * fsyncPerTransaction：默认情况下，File Channel会把每次事务写完磁盘后，执行fsync的操作，把数据从os cache 写入物理磁盘
+     * queueRemaining: 整个channel还能放多少的数据，默认是个100W
+     */
     trans = new FileBackedTransaction(log, TransactionIDOracle.next(),
         transactionCapacity, keepAlive, queueRemaining, getName(),
         fsyncPerTransaction, channelCounter);
@@ -477,11 +483,15 @@ public class FileChannel extends BasicChannelSemantics {
             + channelNameDescriptor);
       }
       boolean success = false;
+      //获取checkpoint的读锁，doTake()方法也会获取读锁，所以doTake和doPut只能操作一个，无法同时操作。
       log.lockShared();
       try {
+        // write to disk
+        //将Event写入数据文件，使用RandomAccessFile。数据会缓存到inflightputs文件中
         FlumeEventPointer ptr = log.put(transactionID, event);
         Preconditions.checkState(putList.offer(ptr), "putList offer failed "
             + channelNameDescriptor);
+        // 把代表这个记录的指针，放到了队列中
         queue.addWithoutCommit(ptr, transactionID);
         success = true;
       } catch (IOException e) {
@@ -517,6 +527,7 @@ public class FileChannel extends BasicChannelSemantics {
 
       try {
         while (true) {
+          // TODO 从全局的queue中拿到指针，指针包含了 文件id和offset
           FlumeEventPointer ptr = queue.removeHead(transactionID);
           if (ptr == null) {
             return null;
@@ -524,6 +535,7 @@ public class FileChannel extends BasicChannelSemantics {
             try {
               // first add to takeList so that if write to disk
               // fails rollback actually does it's work
+              // TODO 把取出来的ptr，放入takeList
               Preconditions.checkState(takeList.offer(ptr),
                   "takeList offer failed "
                       + channelNameDescriptor);
@@ -536,6 +548,7 @@ public class FileChannel extends BasicChannelSemantics {
             } catch (NoopRecordException e) {
               LOG.warn("Corrupt record replaced by File Channel Integrity " +
                   "tool found. Will retrieve next event", e);
+              // TODO 抛异常就移除出去
               takeList.remove(ptr);
             } catch (CorruptEventException ex) {
               if (fsyncPerTransaction) {

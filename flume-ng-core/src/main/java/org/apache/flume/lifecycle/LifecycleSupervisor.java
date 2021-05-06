@@ -246,6 +246,7 @@ public class LifecycleSupervisor implements LifecycleAware {
             switch (supervisoree.status.desiredState) {
               case START:
                 try {
+                  // TODO 真正启动的地方
                   lifecycleAware.start();
                 } catch (Throwable e) {
                   logger.error("Unable to start " + lifecycleAware

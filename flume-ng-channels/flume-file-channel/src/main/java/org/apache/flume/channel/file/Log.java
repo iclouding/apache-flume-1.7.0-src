@@ -366,6 +366,8 @@ public class Log {
     workerExecutor = Executors.newSingleThreadScheduledExecutor(new
         ThreadFactoryBuilder().setNameFormat("Log-BackgroundWorker-" + name)
         .build());
+    // TODO 这里就是定时刷新checkpoint的线程
+    //      时间间隔是自己配置的
     workerExecutor.scheduleWithFixedDelay(new BackgroundWorker(this),
         this.checkpointInterval, this.checkpointInterval,
         TimeUnit.MILLISECONDS);
@@ -647,6 +649,8 @@ public class Log {
     boolean error = true;
     try {
       try {
+        // 这个是把event序列化后，写入磁盘文件的
+        // 这个是基于NIO来写入的。
         FlumeEventPointer ptr = logFiles.get(logFileIndex).put(buffer);
         error = false;
         return ptr;
@@ -734,6 +738,7 @@ public class Log {
     boolean error = true;
     try {
       try {
+        // TODO 这里执行的回滚操作，并不是去把写入磁盘的数据给删掉，而是写入了个Rollback对象。
         logFiles.get(logFileIndex).rollback(buffer);
         error = false;
       } catch (LogFileRetryableIOException e) {
@@ -907,6 +912,9 @@ public class Log {
         // If multiple transactions are committing at the same time,
         // this ensures that the number of actual fsyncs is small and a
         // number of them are grouped together into one.
+        // TODO commit的关键
+        //      1. 把一个Commit序列化后写入磁盘文件
+        //      2. 执行下sync
         logFileWriter.commit(buffer);
         logFileWriter.sync();
         error = false;
@@ -1020,6 +1028,7 @@ public class Log {
       throw new IOException("Usable space exhausted, only " + usableSpace +
           " bytes remaining, required " + minimumRequiredSpace + " bytes");
     }
+    // TODO 写checkpoint的时候，上写锁
     lockExclusive();
     SortedSet<Integer> logFileRefCountsAll = null;
     SortedSet<Integer> logFileRefCountsActive = null;

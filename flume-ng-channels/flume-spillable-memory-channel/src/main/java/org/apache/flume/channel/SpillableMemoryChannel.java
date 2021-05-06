@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * SpillableMemoryChannel will use main memory for buffering events until it has reached capacity.
  * Thereafter file channel will be used as overflow.
+ * TODO: SpillableMemoryChannel 是基于Memory 和 File Channel 派生来的，两者的组合，父类是FileChannel
  * </p>
  */
 @InterfaceAudience.Private

@@ -138,6 +138,7 @@ public class PollingPropertiesFileConfigurationProvider
         lastChange = lastModified;
 
         try {
+          // TODO 这里很重要，加载配置
           eventBus.post(getConfiguration());
         } catch (Exception e) {
           LOGGER.error("Failed to load configuration data. Exception follows.",

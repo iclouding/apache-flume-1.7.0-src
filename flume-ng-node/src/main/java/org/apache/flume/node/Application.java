@@ -84,7 +84,9 @@ public class Application {
 
   @Subscribe
   public synchronized void handleConfigurationEvent(MaterializedConfiguration conf) {
+    // 先停止所有组件
     stopAllComponents();
+    // 启动所有组件
     startAllComponents(conf);
   }
 
@@ -138,6 +140,7 @@ public class Application {
 
     this.materializedConfiguration = materializedConfiguration;
 
+    // 启动一个个channel
     for (Entry<String, Channel> entry :
         materializedConfiguration.getChannels().entrySet()) {
       try {
@@ -151,6 +154,7 @@ public class Application {
 
     /*
      * Wait for all channels to start.
+     * 等待channel启动成功过
      */
     for (Channel ch : materializedConfiguration.getChannels().values()) {
       while (ch.getLifecycleState() != LifecycleState.START
@@ -323,13 +327,16 @@ public class Application {
         }
         List<LifecycleAware> components = Lists.newArrayList();
 
+        // 自动加载配置
         if (reload) {
+          // 使用eventbus做消息通知
           EventBus eventBus = new EventBus(agentName + "-event-bus");
           PollingPropertiesFileConfigurationProvider configurationProvider =
               new PollingPropertiesFileConfigurationProvider(
                   agentName, configurationFile, eventBus, 30);
           components.add(configurationProvider);
           application = new Application(components);
+          // 注册一个处理消息的类
           eventBus.register(application);
         } else {
           PropertiesFileConfigurationProvider configurationProvider =

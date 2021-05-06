@@ -78,12 +78,15 @@ public class HTTPSource extends AbstractSource implements
    * There are 2 ways of doing this:
    * a. Have a static server instance and use connectors in each source
    *    which binds to the port defined for that source.
+   * a. 启动一个静态的http server，使用connector在每个source中接收请求。全局只有一个http server，服务所有source
    * b. Each source starts its own server instance, which binds to the source's
    *    port.
+   * b. 每个source有个http server，监听source的端口
    *
    * b is more efficient than a because Jetty does not allow binding a
    * servlet to a connector. So each request will need to go through each
    * each of the handlers/servlet till the correct one is found.
+   * 相比来说，b方法更加高效。
    *
    */
 
@@ -259,6 +262,8 @@ public class HTTPSource extends AbstractSource implements
       sourceCounter.incrementAppendBatchReceivedCount();
       sourceCounter.addToEventReceivedCount(events.size());
       try {
+        // 拿到channel processor
+        // 这里是根据配置来选的
         getChannelProcessor().processEventBatch(events);
       } catch (ChannelException ex) {
         LOG.warn("Error appending event to channel. "

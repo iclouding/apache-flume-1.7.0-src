@@ -97,6 +97,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
       Map<String, SourceRunner> sourceRunnerMap = Maps.newHashMap();
       Map<String, SinkRunner> sinkRunnerMap = Maps.newHashMap();
       try {
+        // TODO 非常重要的三个load方法
         loadChannels(agentConf, channelComponentMap);
         loadSources(agentConf, channelComponentMap, sourceRunnerMap);
         loadSinks(agentConf, channelComponentMap, sinkRunnerMap);

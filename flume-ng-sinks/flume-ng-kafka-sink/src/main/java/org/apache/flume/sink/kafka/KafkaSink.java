@@ -221,6 +221,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
       }
 
       //Prevent linger.ms from holding the batch
+      // TODO 为了防止数据积压在kafka的写缓冲中。
       producer.flush();
 
       // publish batch and commit.

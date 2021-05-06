@@ -322,7 +322,7 @@ public class ThriftSource extends AbstractSource implements Configurable, EventD
       if (maxThreads == 0) {
         sourceService = Executors.newCachedThreadPool(threadFactory);
       } else {
-        sourceService = Executors.avro-client(maxThreads, threadFactory);
+        sourceService = Executors.newFixedThreadPool(maxThreads, threadFactory);
       }
       args = (TNonblockingServer.AbstractNonblockingServerArgs) argsClass
               .getConstructor(TNonblockingServerTransport.class)

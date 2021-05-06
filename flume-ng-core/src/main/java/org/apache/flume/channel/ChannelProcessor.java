@@ -145,11 +145,14 @@ public class ChannelProcessor implements Configurable {
   public void processEventBatch(List<Event> events) {
     Preconditions.checkNotNull(events, "Event list must not be null");
 
+    // 责任链模式，处理所有的event
     events = interceptorChain.intercept(events);
 
+    // 必须走的channel
     Map<Channel, List<Event>> reqChannelQueue =
         new LinkedHashMap<Channel, List<Event>>();
 
+    // 可选的channel
     Map<Channel, List<Event>> optChannelQueue =
         new LinkedHashMap<Channel, List<Event>>();
 
